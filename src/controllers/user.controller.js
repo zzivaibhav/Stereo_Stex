@@ -10,9 +10,9 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // validation - not empty
   if (
-    [fullName, email, userName, password].some((field) => field?.trim() === "")
+    [fullName, email, userName, password].some((field) => field?.trim() === " ")
   ) {
-    throw new ApiError(400, "All fields are required.");
+    throw new ApiError(400, "All fields are required");
   }
 
   // check is user already exists : username and email
@@ -25,14 +25,26 @@ const registerUser = asyncHandler(async (req, res) => {
 
   // check for images , check for avatar
   const avatarLocalPath = req.files?.avatar[0]?.path;
-  const coverImageLocalPath = req.files?.coverImage[0]?.path;
+
+  let coverImageLocalPath;
+  if (
+    req.files &&
+    Array.isArray(req.files.coverImage) &&
+    req.files.coverImage.length > 0
+  ) {
+    coverImageLocalPath = req.files.coverImage[0].path;
+  }
+
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required.");
   }
 
   // upload them to cloudinary, avatar
   const avatar = await uploadOnCloudinary(avatarLocalPath);
-  const coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  let coverImage;
+  if (coverImageLocalPath) {
+    coverImage = await uploadOnCloudinary(coverImageLocalPath);
+  }
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar is required.");
   }
@@ -40,7 +52,7 @@ const registerUser = asyncHandler(async (req, res) => {
   const user = await User.create({
     fullName,
     avatar: avatar.url,
-    coverImage: coverImage?.url || "",
+    coverImage: coverImage?.url || " ",
     email: email.toLowerCase(),
     password,
     userName: userName.toLowerCase(),
