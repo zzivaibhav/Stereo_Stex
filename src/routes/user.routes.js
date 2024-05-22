@@ -1,9 +1,14 @@
 import { Router } from "express";
-import { registerUser } from "../controllers/user.controller.js";
+import {
+  logOutUser,
+  loginUser,
+  registerUser,
+} from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middleware.js";
-const userRouter = Router();
+import { verifyJWT } from "../middlewares/auth.middleware.js";
+const router = Router();
 
-userRouter.route("/register").post(
+router.route("/register").post(
   upload.fields([
     {
       name: "avatar",
@@ -13,8 +18,11 @@ userRouter.route("/register").post(
       name: "coverImage",
       maxCount: 1,
     },
-  ]),
+  ]), //this is middleware that's why it is written in the middle.
   registerUser
 );
+router.route("/login").post(loginUser);
 
-export default userRouter;
+//secured routes.
+router.route("/logout").post(verifyJWT, logOutUser);
+export default router;

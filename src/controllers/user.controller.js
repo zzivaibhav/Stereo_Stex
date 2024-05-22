@@ -3,7 +3,7 @@ import { ApiError } from "../utils/ApiError.js";
 import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
-
+import { GenAc_Ref } from "../utils/AccessAndRefreshToken.js";
 const registerUser = asyncHandler(async (req, res) => {
   // get user details from front end
   const { fullName, email, userName, password } = req.body;
@@ -76,4 +76,75 @@ const registerUser = asyncHandler(async (req, res) => {
     .json(new ApiResponse(200, createdUser, "User registered successfully "));
 });
 
-export { registerUser };
+const loginUser = asyncHandler(async (req, res) => {
+  //req body  --> data
+  const { email, userName, password } = req.body;
+  // username / email --> check
+  if (!userName || !email) {
+    throw new ApiError(400, "Username or password is required.");
+  }
+  //find the user
+  const user = await User.findOne({ $or: [{ email }, { userName }] });
+
+  if (!user) {
+    throw new ApiError(404, "User does not exist");
+  }
+  // compare password
+  const isPasswordValid = await user.isPasswordCorrect(password);
+
+  if (!isPasswordValid) {
+    throw new ApiError(401, "Invalid user credentials");
+  }
+  //access and refresh token generate.
+  const { accesstoken, refreshtoken } = await GenAc_Ref(user._id);
+  // send secure cookies
+  const loggedInUser = await User.findById(user._id).select(
+    "-password -refreshToken"
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true, //made it secure so that no one from the front-end can access the cookies.
+  };
+  return res
+    .status(200)
+    .cookie("accessToken", accesstoken, options)
+    .cookie("refreshToken", refreshtoken, options)
+    .json(
+      new ApiResponse(
+        200,
+        {
+          user: loggedInUser,
+          accesstoken,
+          refreshtoken,
+        },
+        "User logged in successfully"
+      )
+    );
+});
+
+const logOutUser = asyncHandler(async (req, res) => {
+  await User.findByIdAndUpdate(
+    req.user._id,
+    {
+      $set: {
+        refreshToken: undefined,
+      },
+    },
+    {
+      new: true,
+    }
+  );
+
+  const options = {
+    httpOnly: true,
+    secure: true, //made it secure so that no one from the front-end can access the cookies.
+  };
+
+  return res
+    .status(200)
+    .clearCookie("accessToken", options)
+    .clearCookie("refreshtoken", options)
+    .json(new ApiResponse(200, {}, "User logged out "));
+});
+export { registerUser, loginUser, logOutUser };
