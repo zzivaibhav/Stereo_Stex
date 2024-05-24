@@ -18,7 +18,6 @@ const videoSchema = new Schema(
     description: {
       type: String, // cloudnary url
       requiured: true,
-      s,
     },
     duration: {
       type: Number, // from cloudnary
@@ -30,7 +29,7 @@ const videoSchema = new Schema(
     },
     isPublished: {
       type: Boolean,
-      default: true,
+      default: false,
     },
     owner: {
       type: Schema.Types.ObjectId,

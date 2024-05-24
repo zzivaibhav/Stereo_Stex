@@ -22,5 +22,16 @@ const uploadOnCloudinary = async (localFilePath) => {
     fs.unlinkSync(localFilePath); // remove the locally saved temporary file as the upload operatioin got failed
   }
 };
+const getVideoDuration = async (publicId) => {
+  try {
+    const result = await cloudinary.api.resource(publicId, {
+      resource_type: "video",
+      media_metadata: true, //this is used tp get the duration from metadata.
+    });
 
-export { uploadOnCloudinary };
+    return result.duration;
+  } catch (error) {
+    throw new Error("Failed to retrieve video duration from Cloudinary");
+  }
+};
+export { uploadOnCloudinary, getVideoDuration };

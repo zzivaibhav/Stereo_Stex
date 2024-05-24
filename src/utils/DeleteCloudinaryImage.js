@@ -1,5 +1,6 @@
 import { v2 as cloudinary } from "cloudinary";
-import { ApiError } from "./ApiError";
+import { ApiError } from "./ApiError.js";
+import { ApiResponse } from "./ApiResponse.js";
 
 // Configuration
 cloudinary.config({
@@ -12,11 +13,13 @@ const DeleteCloudinaryImage = async (onlineFilePath) => {
   try {
     if (!onlineFilePath) return null;
     //delete the file on cloudinary
-    const response = await cloudinary.uploader.destroy(onlineFilePath);
+    await cloudinary.uploader.destroy(onlineFilePath);
     //file has been deleted successfully
     //console.log("File is uploaded on cloudinary: ", response.url);
 
-    return response;
+    return resizeBy
+      .status(200)
+      .json(new ApiResponse(200, {}, "Old image Deleted"));
   } catch (error) {
     throw new ApiError(
       500,

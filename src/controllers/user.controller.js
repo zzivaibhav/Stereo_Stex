@@ -210,13 +210,13 @@ const changeCurrentPassword = asyncHandler(async (req, res) => {
 
   return res
     .status(200)
-    .json(new ApiResponse(200, {}, "Password successfully."));
+    .json(new ApiResponse(200, {}, "Password successfully changed."));
 });
 
 const getCurretUser = asyncHandler(async (req, res) => {
   return res
     .status(200)
-    .json(200, req.user, "Current user fetched succesfully.");
+    .json(new ApiResponse(200, req.user, "Current user fetched succesfully."));
 });
 
 const updateAccountDetails = asyncHandler(async (req, res) => {
@@ -243,14 +243,11 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 });
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
-  const currentUserID = req.user?._id;
-  const oldImageUrl = await User.findById(currentUserID).select("avatar");
-  console.log(oldImageUrl);
   const avatarLocalPath = req.file?.path;
   if (!avatarLocalPath) {
     throw new ApiError(400, "Avatar file is missing.");
   }
-  const avatar = await uploadOnCloudinary(avatarLocalPath);
+  const avatarNew = await uploadOnCloudinary(avatarLocalPath);
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading avatar.");
   }
@@ -260,7 +257,7 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
 
     {
       $set: {
-        avatar: avatar.url,
+        avatar: avatarNew.url,
       },
     },
 
@@ -269,9 +266,6 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     }
   ).select("-password");
 
-  DeleteCloudinaryImage(oldImageUrl).then(
-    console.log("Old image deleted successfully")
-  );
   return res
     .status(200)
     .json(new ApiResponse(200, user, "Avatar image updated."));
